@@ -1,3 +1,5 @@
+data "azurerm_client_config" "current" {}
+
 resource "azurerm_resource_group" "rg" {
   name     = "${var.aca_name}rg"
   location = var.location
@@ -9,6 +11,14 @@ resource "azurerm_log_analytics_workspace" "loganalytics" {
   resource_group_name = azurerm_resource_group.rg.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
+}
+
+resource "azurerm_application_insights" "appinsights" {
+  name                = "${var.aca_name}-appinsights"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  workspace_id        = azurerm_log_analytics_workspace.loganalytics.id
+  application_type    = "web"
 }
 
 resource "azurerm_container_registry" "acr" {
@@ -174,4 +184,78 @@ resource "azurerm_container_app" "containerapp-ui" {
     }
   }
 
+}
+
+
+// section for private link service
+data "azurerm_lb" "kubernetes-internal" {
+  name                = "kubernetes-internal"
+  resource_group_name = format("MC_%s-rg_%s_%s", split(".", azurerm_container_app.containerapp-ui.ingress[0].fqdn)[1], split(".", azurerm_container_app.containerapp-ui.ingress[0].fqdn)[1], azurerm_resource_group.rg.location)
+}
+resource "azurerm_private_link_service" "pls" {
+  name                = "${var.aca_name}pls"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+
+  visibility_subscription_ids                 = [data.azurerm_client_config.current.subscription_id]
+  load_balancer_frontend_ip_configuration_ids = [data.azurerm_lb.kubernetes-internal.frontend_ip_configuration.0.id]
+
+  nat_ip_configuration {
+    name                       = "primary"
+    private_ip_address_version = "IPv4"
+    subnet_id                  = data.azurerm_subnet.acasubnet.id
+    primary                    = true
+  }
+}
+
+
+// section for front door service
+resource "azurerm_cdn_frontdoor_profile" "fd-profile" {
+  depends_on = [azurerm_private_link_service.pls]
+
+  name                = "${var.aca_name}-fdprofile"
+  resource_group_name = azurerm_resource_group.rg.name
+  sku_name            = "Premium_AzureFrontDoor"
+}
+resource "azurerm_cdn_frontdoor_endpoint" "fd-endpoint" {
+  name                     = "${var.aca_name}-fdendpoint"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.fd-profile.id
+}
+resource "azurerm_cdn_frontdoor_origin_group" "fd-origin-group" {
+  name                     = "${var.aca_name}-fdorigingroup"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.fd-profile.id
+
+  load_balancing {
+    additional_latency_in_milliseconds = 0
+    sample_size                        = 16
+    successful_samples_required        = 3
+  }
+}
+resource "azurerm_cdn_frontdoor_route" "fd-route" {
+  name                          = "${var.aca_name}-fdroute"
+  cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.fd-endpoint.id
+  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.fd-origin-group.id
+  cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.fd-origin.id]
+
+  supported_protocols    = ["Http", "Https"]
+  patterns_to_match      = ["/*"]
+  forwarding_protocol    = "HttpsOnly"
+  link_to_default_domain = true
+  https_redirect_enabled = true
+}
+resource "azurerm_cdn_frontdoor_origin" fd-origin {
+  name                           = "${var.aca_name}-fdorigin"
+  cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.fd-origin-group.id
+  enabled                        = true
+  host_name                      = azurerm_container_app.containerapp-ui.ingress[0].fqdn
+  origin_host_header             = azurerm_container_app.containerapp-ui.ingress[0].fqdn
+  priority                       = 1
+  weight                         = 1000
+  certificate_name_check_enabled = true
+
+  private_link {
+    request_message        = "Request access for Private Link Origin CDN Frontdoor"
+    location               = azurerm_resource_group.rg.location
+    private_link_target_id = azurerm_private_link_service.pls.id
+  }
 }

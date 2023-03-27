@@ -4,10 +4,12 @@ This repo contains a sample on how to use Terraform to create the following reso
 * Container Registry - this sample uses a mcr hello world container image so the registry is not really used, but glues containers apps and the registry with a managed identity for the CI/CD process
 * Log Analytics Workspace - to store the logs
 * Managed Identity to enable Container Apps access the Container Registry
-* Container Apps Environment with internal networking
+* Container Apps Environment with internal networking (for an existing VNET)
 * Container App with an API 1 and ingress limited to the Container App Environment
 * Container App with an API 2 and ingress limited to the Container App Environment
 * Container App with the UI and ingress limited to the VNet. API1 and API2 URI's are passed to this App with env vars.
+* Private Link service for Container App Environment
+* Front Door to expose the UI to the public
 
 Reference:
 * [Container Apps documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
@@ -15,5 +17,5 @@ Reference:
 * [Quickstart - deploy the UI](https://learn.microsoft.com/en-us/azure/container-apps/communicate-between-microservices)
 * [Quickstart - Terraform with Azure](https://learn.microsoft.com/en-us/azure/developer/terraform/create-resource-group)
 * [Terraform provider for Container Apps](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app)
-
+* [Terraform provider for Front Door](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cdn_frontdoor_origin)
 
