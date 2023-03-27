@@ -48,7 +48,77 @@ resource "azurerm_role_assignment" "containerapp" {
   ]
 }
 
-resource "azurerm_container_app" "containerapp" {
+resource "azurerm_container_app" "containerapp-api1" {
+  name                         = "${var.aca_name}-api1"
+  container_app_environment_id = azurerm_container_app_environment.containerappenv.id
+  resource_group_name          = azurerm_resource_group.rg.name
+  revision_mode                = "Multiple"
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.containerapp.id]
+  }
+
+  registry {
+    server   = azurerm_container_registry.acr.login_server
+    identity = azurerm_user_assigned_identity.containerapp.id
+  }
+
+  ingress {
+     external_enabled = false
+     target_port = 80
+     traffic_weight {
+       latest_revision = true
+       percentage = 100
+     }
+  }
+  template {
+    container {
+      name   = "helloworldcontainerapp"
+      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+      cpu    = 0.25
+      memory = "0.5Gi"
+    }
+  }
+
+}
+
+resource "azurerm_container_app" "containerapp-api2" {
+  name                         = "${var.aca_name}-api2"
+  container_app_environment_id = azurerm_container_app_environment.containerappenv.id
+  resource_group_name          = azurerm_resource_group.rg.name
+  revision_mode                = "Multiple"
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.containerapp.id]
+  }
+
+  registry {
+    server   = azurerm_container_registry.acr.login_server
+    identity = azurerm_user_assigned_identity.containerapp.id
+  }
+
+  ingress {
+     external_enabled = false
+     target_port = 80
+     traffic_weight {
+       latest_revision = true
+       percentage = 100
+     }
+  }
+  template {
+    container {
+      name   = "helloworldcontainerapp"
+      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+      cpu    = 0.25
+      memory = "0.5Gi"
+    }
+  }
+
+}
+
+resource "azurerm_container_app" "containerapp-ui" {
   name                         = "${var.aca_name}-ui"
   container_app_environment_id = azurerm_container_app_environment.containerappenv.id
   resource_group_name          = azurerm_resource_group.rg.name
@@ -78,6 +148,14 @@ resource "azurerm_container_app" "containerapp" {
       image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
       cpu    = 0.25
       memory = "0.5Gi"
+      env {
+        name = "API1_URL"
+        value = azurerm_container_app.containerapp-api1.ingress[0].fqdn
+      }
+      env {
+        name = "API2_URL"
+        value = azurerm_container_app.containerapp-api2.ingress[0].fqdn
+      }
 
       readiness_probe {
         transport = "HTTP"
