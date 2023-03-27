@@ -1,7 +1,7 @@
 
 This repo contains a sample on how to use Terraform to create the following resources:
 * Resource Group - that includes the following resources
-* Container Registry - this sample uses a hello world container image so the registry is not really used, but prepares 
+* Container Registry - this sample uses a mcr hello world container image so the registry is not really used, but glues containers apps and the registry with a managed identity for the CI/CD process
 * Log Analytics Workspace - to store the logs
 * Managed Identity to enable Container Apps access the Container Registry
 * Container Apps Environment with internal networking
