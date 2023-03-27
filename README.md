@@ -10,10 +10,10 @@ This repo contains a sample on how to use Terraform to create the following reso
 * Container App with the UI and ingress limited to the VNet. API1 and API2 URI's are passed to this App with env vars.
 
 Reference:
-* [Container Apps documentation | https://learn.microsoft.com/en-us/azure/container-apps/]
-* [Quickstart - deploy an API | https://learn.microsoft.com/en-us/azure/container-apps/quickstart-code-to-cloud]
-* [Quickstart - deploy the UI | https://learn.microsoft.com/en-us/azure/container-apps/communicate-between-microservices]
-* [Quickstart - Terraform with Azure | https://learn.microsoft.com/en-us/azure/developer/terraform/create-resource-group]
-* [Terraform provider for Container Apps | https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app]
+* [Container Apps documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
+* [Quickstart - deploy an API](https://learn.microsoft.com/en-us/azure/container-apps/quickstart-code-to-cloud)
+* [Quickstart - deploy the UI](https://learn.microsoft.com/en-us/azure/container-apps/communicate-between-microservices)
+* [Quickstart - Terraform with Azure9](https://learn.microsoft.com/en-us/azure/developer/terraform/create-resource-group)
+* [Terraform provider for Container Apps](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app)
 
 
