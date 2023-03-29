@@ -14,4 +14,8 @@ output "ui_uri" {
   value = azurerm_container_app.containerapp-ui.ingress[0].fqdn
 }
 
+output "frontdoor_endpoint" {
+  value = azurerm_cdn_frontdoor_endpoint.fd-endpoint.host_name
+}
+
  

@@ -5,6 +5,28 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
+resource "azurerm_virtual_network" "vnet" {
+  name                = "${var.aca_name}-vnet"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  address_space       = ["10.204.0.0/16"]
+}
+
+resource "azurerm_subnet" "plssubnet" {
+  name                 = "plssubnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.204.1.0/24"]
+  private_link_service_network_policies_enabled = false
+}
+
+resource "azurerm_subnet" "acasubnet" {
+  name                 = "acasubnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.204.2.0/23"]
+}
+
 resource "azurerm_log_analytics_workspace" "loganalytics" {
   name                = "${var.aca_name}la"
   location            = azurerm_resource_group.rg.location
@@ -28,18 +50,12 @@ resource "azurerm_container_registry" "acr" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-data "azurerm_subnet" "acasubnet" {
-  name                 = "acasubnet"
-  virtual_network_name = "alexviei-vnet"
-  resource_group_name  = "alexviei-network"
-}
-
 resource "azurerm_container_app_environment" "containerappenv" {
   name                       = "${var.aca_name}env"
   location                   = azurerm_resource_group.rg.location
   resource_group_name        = azurerm_resource_group.rg.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.loganalytics.id
-  infrastructure_subnet_id   = data.azurerm_subnet.acasubnet.id
+  infrastructure_subnet_id   = azurerm_subnet.acasubnet.id
   internal_load_balancer_enabled = true
 }
 
@@ -186,6 +202,35 @@ resource "azurerm_container_app" "containerapp-ui" {
 
 }
 
+// section for key vault
+resource "azurerm_key_vault" "kv" {
+  name                        = "${var.aca_name}kv"
+  location                    = azurerm_resource_group.rg.location
+  resource_group_name         = azurerm_resource_group.rg.name
+  enabled_for_disk_encryption = true
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+
+  sku_name = "standard"
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    key_permissions = [
+      "Get",
+    ]
+
+    secret_permissions = [
+      "Get",
+    ]
+
+    storage_permissions = [
+      "Get",
+    ]
+  }
+}
 
 // section for private link service
 data "azurerm_lb" "kubernetes-internal" {
@@ -199,11 +244,12 @@ resource "azurerm_private_link_service" "pls" {
 
   visibility_subscription_ids                 = [data.azurerm_client_config.current.subscription_id]
   load_balancer_frontend_ip_configuration_ids = [data.azurerm_lb.kubernetes-internal.frontend_ip_configuration.0.id]
+  auto_approval_subscription_ids              = [data.azurerm_client_config.current.subscription_id] 
 
   nat_ip_configuration {
     name                       = "primary"
     private_ip_address_version = "IPv4"
-    subnet_id                  = data.azurerm_subnet.acasubnet.id
+    subnet_id                  = azurerm_subnet.plssubnet.id
     primary                    = true
   }
 }
