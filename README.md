@@ -1,5 +1,5 @@
 
-This repo contains a sample on how to use Terraform to create the following resources:
+### This repo contains a sample on how to use Terraform to create the following resources:
 * Resource Group - that includes the following resources
 * VNET with one subnet for the Private Link Service and another one for the Azure Container Apps Environment
 * Container Registry - this sample uses a mcr hello world container image so the registry is not really used, but glues containers apps and the registry with a managed identity for the CI/CD process
@@ -27,7 +27,7 @@ Reference:
 This sample was inspired by [this excelent article](https://techcommunity.microsoft.com/t5/fasttrack-for-azure/integrating-azure-front-door-waf-with-azure-container-apps/ba-p/3729081)! If you are looking for a bicep equivalent and/or more architecture details please use this article. 
 
 
-#App lifecycle management topics
+### App lifecycle management topics
 __1. Complete environment(s) creation using the IaC based blueprints__
 * [Environment](https://learn.microsoft.com/en-us/azure/container-apps/environment), [custom VNet](https://learn.microsoft.com/en-us/azure/container-apps/networking#custom-vnet-configuration), [ingress](https://learn.microsoft.com/en-us/azure/container-apps/ingress-overview) and [proxying](https://learn.microsoft.com/en-us/azure/container-apps/firewall-integration), [network security](https://learn.microsoft.com/en-us/azure/container-apps/firewall-integration), [identities](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity?tabs=portal%2Cdotnet), [secrets](https://learn.microsoft.com/en-us/azure/container-apps/manage-secrets?tabs=arm-template), [Arc](https://learn.microsoft.com/en-us/azure/container-apps/azure-arc-overview)
 * [Terraform based quick start](https://github.com/vieiraae/aca-blueprint)
